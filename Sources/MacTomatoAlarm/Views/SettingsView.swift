@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var autoNext: Bool
     @State private var sound: String
     @State private var pulseInterval: Int
+    @State private var autoCheckUpdates: Bool
 
     init() {
         let defaults = UserDefaults.standard
@@ -17,6 +18,7 @@ struct SettingsView: View {
         _autoNext = State(initialValue: defaults.bool(forKey: "autoStartNext"))
         _sound = State(initialValue: defaults.string(forKey: "selectedSound") ?? "Tink")
         _pulseInterval = State(initialValue: defaults.object(forKey: "pulseIntervalMinutes") as? Int ?? 1)
+        _autoCheckUpdates = State(initialValue: defaults.bool(forKey: "autoCheckUpdates"))
     }
 
     var body: some View {
@@ -59,9 +61,16 @@ struct SettingsView: View {
                     Text("Pop").tag("Pop")
                 }
             }
+
+            Section("更新") {
+                Toggle("自動檢查更新", isOn: $autoCheckUpdates)
+                Button("立即檢查更新") {
+                    Task { await UpdateChecker.shared.checkForUpdates(showUpToDate: true) }
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 380, height: 400)
+        .frame(width: 380, height: 480)
         .onAppear {
             DispatchQueue.main.async {
                 if let window = NSApp.windows.first(where: { $0.title.contains("偏好設定") }) {
@@ -77,6 +86,7 @@ struct SettingsView: View {
             defaults.set(autoNext, forKey: "autoStartNext")
             defaults.set(sound, forKey: "selectedSound")
             defaults.set(pulseInterval, forKey: "pulseIntervalMinutes")
+            defaults.set(autoCheckUpdates, forKey: "autoCheckUpdates")
             vm.loadSettings()
         }
     }

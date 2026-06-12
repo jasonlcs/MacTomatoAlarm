@@ -4,6 +4,13 @@ import SwiftUI
 struct MacTomatoAlarmApp: App {
     @State private var vm = PomodoroViewModel()
 
+    init() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            await UpdateChecker.shared.autoCheckIfNeeded()
+        }
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarContentView()

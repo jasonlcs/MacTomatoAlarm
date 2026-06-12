@@ -48,6 +48,15 @@ struct MenuBarContentView: View {
             Spacer()
             tomatoBadge
             Button {
+                Task { await UpdateChecker.shared.checkForUpdates(showUpToDate: true) }
+            } label: {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("檢查更新")
+            Button {
                 popoverWindow?.close()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     openWindow(id: "settings")
