@@ -21,6 +21,9 @@ cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$PRODUCT"
 cp "$SRC/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 
+echo "▸ 移除代碼簽名..."
+codesign --remove-signature "$APP_BUNDLE" 2>/dev/null || true
+
 echo "▸ 產生 DMG 背景圖..."
 swiftc -o "$BUILD_DIR/dmg-bg-gen" "Tools/DMGBackground/main.swift" -framework AppKit
 "$BUILD_DIR/dmg-bg-gen" "$RESOURCES/icon.icns" "$BUILD_DIR/background.png"
