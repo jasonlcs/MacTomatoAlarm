@@ -16,10 +16,20 @@ rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
 
-BINARY="$(swift build -c release --show-bin-path)/$PRODUCT"
+BIN_PATH="$(swift build -c release --show-bin-path)"
+BINARY="$BIN_PATH/$PRODUCT"
 cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$PRODUCT"
 cp "$SRC/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
+
+# 複製 SwiftPM 產生的資源 bundle，否則 Bundle.module 會在啟動時 fatalError，導致 App 一開啟就閃退
+RES_BUNDLE="$BIN_PATH/${PRODUCT}_${PRODUCT}.bundle"
+if [ -d "$RES_BUNDLE" ]; then
+    cp -R "$RES_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
+else
+    echo "⚠️  找不到資源 bundle: $RES_BUNDLE" >&2
+    exit 1
+fi
 
 echo "▸ 用 ad-hoc 簽名..."
 codesign -s - "$APP_BUNDLE" 2>/dev/null || true
