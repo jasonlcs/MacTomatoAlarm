@@ -7,7 +7,7 @@
     <key>CFBundleDisplayName</key>
     <string>MacTomatoAlarm</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.mactomatoalarm</string>
+    <string>com.jasonlcs.mactomatoalarm</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleShortVersionString</key>

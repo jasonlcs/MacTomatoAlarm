@@ -2,3 +2,4 @@
 .build/
 *.xcuserdata
 *.xcodeproj/project.xcworkspace
+test.icns
