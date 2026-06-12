@@ -21,9 +21,8 @@ cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$PRODUCT"
 cp "$SRC/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 
-echo "▸ 移除代碼簽名..."
-find "$APP_BUNDLE" -type f \( -executable -o -name "*.dylib" \) -exec codesign --remove-signature {} \; 2>/dev/null || true
-codesign --remove-signature "$APP_BUNDLE" 2>/dev/null || true
+echo "▸ 用 ad-hoc 簽名..."
+codesign -s - "$APP_BUNDLE" 2>/dev/null || true
 
 echo "▸ 產生 DMG 背景圖..."
 swiftc -o "$BUILD_DIR/dmg-bg-gen" "Tools/DMGBackground/main.swift" -framework AppKit
