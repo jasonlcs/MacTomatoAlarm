@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var longBreakMin: Int
     @State private var autoNext: Bool
     @State private var sound: String
+    @State private var pulseInterval: Int
 
     init() {
         let defaults = UserDefaults.standard
@@ -15,6 +16,7 @@ struct SettingsView: View {
         _longBreakMin = State(initialValue: defaults.object(forKey: "longBreakMinutes") as? Int ?? 15)
         _autoNext = State(initialValue: defaults.bool(forKey: "autoStartNext"))
         _sound = State(initialValue: defaults.string(forKey: "selectedSound") ?? "Tink")
+        _pulseInterval = State(initialValue: defaults.object(forKey: "pulseIntervalMinutes") as? Int ?? 1)
     }
 
     var body: some View {
@@ -41,6 +43,14 @@ struct SettingsView: View {
                 Toggle("自動開始下一階段", isOn: $autoNext)
             }
 
+            Section("滑出提示") {
+                Picker("頻率", selection: $pulseInterval) {
+                    Text("每分鐘").tag(1)
+                    Text("每五分鐘").tag(5)
+                    Text("每十分鐘").tag(10)
+                }
+            }
+
             Section("通知") {
                 Picker("提示音效", selection: $sound) {
                     Text("Tink").tag("Tink")
@@ -51,7 +61,14 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 380, height: 320)
+        .frame(width: 380, height: 400)
+        .onAppear {
+            DispatchQueue.main.async {
+                if let window = NSApp.windows.first(where: { $0.title.contains("偏好設定") }) {
+                    window.level = .floating
+                }
+            }
+        }
         .onDisappear {
             let defaults = UserDefaults.standard
             defaults.set(focusMin, forKey: "focusMinutes")
@@ -59,6 +76,7 @@ struct SettingsView: View {
             defaults.set(longBreakMin, forKey: "longBreakMinutes")
             defaults.set(autoNext, forKey: "autoStartNext")
             defaults.set(sound, forKey: "selectedSound")
+            defaults.set(pulseInterval, forKey: "pulseIntervalMinutes")
             vm.loadSettings()
         }
     }

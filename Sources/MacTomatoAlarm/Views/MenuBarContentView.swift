@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarContentView: View {
     @Environment(PomodoroViewModel.self) private var vm
     @Environment(\.openWindow) private var openWindow
+    @State private var popoverWindow: NSWindow?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,6 +31,12 @@ struct MenuBarContentView: View {
         .onAppear {
             vm.loadSettings()
             Task { await NotificationService.shared.requestAuthorization() }
+            DispatchQueue.main.async {
+                popoverWindow = NSApp.keyWindow
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dismissPopover)) { _ in
+            popoverWindow?.close()
         }
     }
 
@@ -41,7 +48,10 @@ struct MenuBarContentView: View {
             Spacer()
             tomatoBadge
             Button {
-                openWindow(id: "settings")
+                popoverWindow?.close()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    openWindow(id: "settings")
+                }
             } label: {
                 Image(systemName: "gearshape")
                     .font(.caption)

@@ -1,6 +1,10 @@
 import SwiftUI
 import Observation
 
+extension Notification.Name {
+    static let dismissPopover = Notification.Name("DismissPopover")
+}
+
 @Observable
 final class PomodoroViewModel {
     // MARK: - Timer State
@@ -22,6 +26,7 @@ final class PomodoroViewModel {
     // MARK: - Settings
     var autoStartNext: Bool = false
     var selectedSound: String = "Tink"
+    var pulseIntervalMinutes: Int = 1
 
     private var timerTask: Task<Void, Never>?
 
@@ -64,6 +69,13 @@ final class PomodoroViewModel {
             return "\(mins):\(String(format: "%02d", secs))"
         }
         return "\(mins)"
+    }
+
+    var menuBarTooltip: String {
+        let totalSeconds = Int(max(timeRemaining, 0))
+        let mins = totalSeconds / 60
+        let secs = totalSeconds % 60
+        return "\(phase.icon) \(phase.displayName) \(mins):\(String(format: "%02d", secs))"
     }
 
     var phaseIcon: String { phase.icon }
@@ -115,6 +127,9 @@ final class PomodoroViewModel {
         case .idle:
             applyQuickSettings()
             startTimer()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                NotificationCenter.default.post(name: .dismissPopover, object: nil)
+            }
         case .running:
             pauseTimer()
         case .paused:
@@ -156,6 +171,7 @@ final class PomodoroViewModel {
         quickLongBreakMinutes = defaults.object(forKey: "longBreakMinutes") as? Int ?? 15
         autoStartNext = defaults.bool(forKey: "autoStartNext")
         selectedSound = defaults.string(forKey: "selectedSound") ?? "Tink"
+        pulseIntervalMinutes = defaults.object(forKey: "pulseIntervalMinutes") as? Int ?? 1
         if status == .idle {
             totalTime = TimeInterval(quickFocusMinutes * 60)
             timeRemaining = totalTime
@@ -169,6 +185,7 @@ final class PomodoroViewModel {
         defaults.set(quickLongBreakMinutes, forKey: "longBreakMinutes")
         defaults.set(autoStartNext, forKey: "autoStartNext")
         defaults.set(selectedSound, forKey: "selectedSound")
+        defaults.set(pulseIntervalMinutes, forKey: "pulseIntervalMinutes")
     }
 
     // MARK: - Private
@@ -213,8 +230,15 @@ final class PomodoroViewModel {
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled, status == .running else { return }
             timeRemaining -= 1
-            let secs = Int(max(timeRemaining, 0)) % 60
-            let isPulse = secs >= 1 && secs <= 3
+            let totalSecs = Int(max(timeRemaining, 0))
+            let mins = totalSecs / 60
+            let secs = totalSecs % 60
+            let isPulse: Bool
+            if phase == .shortBreak || phase == .longBreak {
+                isPulse = true
+            } else {
+                isPulse = secs >= 1 && secs <= 3 && mins % pulseIntervalMinutes == 0
+            }
             onPulseTick?(isPulse, formattedRemaining, phase)
         }
         guard !Task.isCancelled else { return }

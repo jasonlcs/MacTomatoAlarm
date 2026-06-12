@@ -20,6 +20,7 @@ struct MacTomatoAlarmApp: App {
                         .contentTransition(.numericText(countsDown: true))
                 }
             }
+            .help(vm.menuBarTooltip)
         }
         .menuBarExtraStyle(.window)
 
