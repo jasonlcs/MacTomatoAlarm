@@ -22,6 +22,7 @@ cp "$SRC/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 
 echo "▸ 移除代碼簽名..."
+find "$APP_BUNDLE" -type f \( -executable -o -name "*.dylib" \) -exec codesign --remove-signature {} \; 2>/dev/null || true
 codesign --remove-signature "$APP_BUNDLE" 2>/dev/null || true
 
 echo "▸ 產生 DMG 背景圖..."
