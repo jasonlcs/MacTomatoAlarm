@@ -23,9 +23,37 @@ macOS 選單列番茄鐘 — 輕量、專注、可自訂。
 
 1. 從 [Releases](https://github.com/jasonlcs/MacTomatoAlarm/releases) 下載最新 `MacTomatoAlarm.dmg`
 2. 打開 DMG，將 `MacTomatoAlarm.app` 拖曳到 `Applications` 資料夾
-3. **首次執行**：由於 App 未經 Apple 公證，請在 `Applications` 中對 `MacTomatoAlarm.app` **按右鍵 → 打開**，再於對話框點選「打開」
+3. 首次執行時，若出現「無法驗證是否為惡意軟體」，對 App **按右鍵 → 打開** 即可（僅需一次）
 
-> 若出現「是否要丟到垃圾桶」，先到「系統設定 → 隱私權與安全性」點「強制打開」，或直接用右鍵打開即可。若選單列沒有出現 🍅 圖示，可能是 icon 被系統隱藏了，可透過系統設定調整選單列顯示。
+> Release 版本若已設定 Developer ID 簽名（見下方），則不會出現 Gatekeeper 警告，可直接打開。
+
+## 設定 Developer ID 簽名（CI）
+
+若你有 Apple Developer 帳號，可在 CI 加入正式簽名，消除 Gatekeeper 警告：
+
+### 1. 匯出憑證
+
+```bash
+# 在本機 Keychain Access 中：
+#   鑰匙圈存取 → 憑證輔助程式 → 向憑證授權要求憑證
+#   到 developer.apple.com → Certificates → 新增「Developer ID Application」
+#   下載 .cer 後點兩下安裝，再從 Keychain Access 右鍵輸出為 .p12（設定密碼）
+```
+
+### 2. 轉成 base64 並寫入 GitHub Secrets
+
+```bash
+base64 -i /path/to/certificate.p12 | pbcopy
+```
+
+在 GitHub repo → Settings → Secrets and variables → Actions，新增兩個 secrets：
+
+| Secret | 說明 |
+|---|---|
+| `DEVELOPER_CERTIFICATE_BASE64` | 上面複製的 base64 字串 |
+| `CERTIFICATE_PASSWORD` | .p12 的密碼 |
+
+設定後下一次推送 tag 觸發 CI 時，build 會自動使用 Developer ID 簽名。若未設定 secrets，則回退為 ad-hoc 簽名。
 
 ## 疑難排解
 

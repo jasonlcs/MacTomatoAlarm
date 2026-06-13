@@ -24,8 +24,15 @@ cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 
 # 資源已透過 cp "$RESOURCES"/* 直接複製到 Contents/Resources/，不依賴 SwiftPM resource bundle
 
-echo "▸ 用 ad-hoc 簽名..."
-codesign -s - "$APP_BUNDLE" 2>/dev/null || true
+# 簽名：SIGNING_IDENTITY 環境變數不為空時使用 Developer ID 簽名，否則用 ad-hoc
+SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
+if [ -n "$SIGNING_IDENTITY" ]; then
+    echo "▸ 使用 Developer ID 簽名: $SIGNING_IDENTITY"
+    codesign --deep --force --options runtime --sign "$SIGNING_IDENTITY" "$APP_BUNDLE"
+else
+    echo "▸ 用 ad-hoc 簽名..."
+    codesign -s - "$APP_BUNDLE" 2>/dev/null || true
+fi
 
 echo "▸ 產生 DMG 背景圖..."
 swiftc -o "$BUILD_DIR/dmg-bg-gen" "Tools/DMGBackground/main.swift" -framework AppKit
