@@ -7,7 +7,12 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MacTomatoAlarm",
-            path: "Sources/MacTomatoAlarm"
+            path: "Sources/MacTomatoAlarm",
+            // These are bundled manually by build-app.sh, not by SwiftPM.
+            exclude: [
+                "Info.plist",
+                "Resources/icon.icns",
+            ]
         )
     ]
 )

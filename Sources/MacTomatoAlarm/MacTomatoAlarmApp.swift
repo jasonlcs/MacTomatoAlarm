@@ -16,17 +16,12 @@ struct MacTomatoAlarmApp: App {
             MenuBarContentView()
                 .environment(vm)
         } label: {
-            HStack(alignment: .center, spacing: 4) {
-                Image(nsImage: menuBarImage(for: vm.menuBarIcon))
-                    .resizable()
-                    .renderingMode(.template)
-                    .frame(width: 16, height: 16)
-                if vm.status == .running || vm.status == .completed {
-                    Text(vm.menuBarMinutes)
-                        .font(.system(.body, design: .monospaced))
-                        .contentTransition(.numericText(countsDown: true))
-                }
-            }
+            Image(nsImage: MenuBarLabelRenderer.render(
+                symbolName: vm.menuBarSymbol,
+                text: (vm.status == .running || vm.status == .completed) ? vm.menuBarMinutes : nil,
+                color: vm.menuBarPillColor
+            ))
+            .renderingMode(.original)
             .help(vm.menuBarTooltip)
         }
         .menuBarExtraStyle(.window)
@@ -37,9 +32,5 @@ struct MacTomatoAlarmApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
-    }
-
-    private func menuBarImage(for name: String) -> NSImage {
-        Bundle.main.image(forResource: name) ?? NSImage(systemSymbolName: "timer", accessibilityDescription: nil)!
     }
 }

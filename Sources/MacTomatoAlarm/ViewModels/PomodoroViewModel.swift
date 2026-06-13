@@ -85,11 +85,24 @@ final class PomodoroViewModel {
         TimerPreset.all.first { $0.id == selectedPresetID } ?? .classic
     }
 
-    var menuBarIcon: String {
+    /// SF Symbol shown inside the menu bar pill.
+    var menuBarSymbol: String {
         switch status {
-        case .running: return "MenuBar_Running"
-        case .paused: return "MenuBar_Paused"
-        case .idle, .completed: return "MenuBar_Stopped"
+        case .running, .completed: return "timer"
+        case .paused: return "pause.fill"
+        case .idle: return "timer"
+        }
+    }
+
+    /// Background colour for the menu bar pill.
+    var menuBarPillColor: NSColor {
+        switch status {
+        case .running, .completed:
+            return phase == .focus ? .systemRed : .systemGreen
+        case .paused:
+            return .systemGray
+        case .idle:
+            return .systemGray
         }
     }
 
