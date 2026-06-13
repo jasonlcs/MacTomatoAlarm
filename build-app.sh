@@ -28,7 +28,7 @@ cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
 if [ -n "$SIGNING_IDENTITY" ]; then
     echo "▸ 使用 Developer ID 簽名: $SIGNING_IDENTITY"
-    codesign --deep --force --options runtime --sign "$SIGNING_IDENTITY" "$APP_BUNDLE"
+    codesign --deep --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_BUNDLE"
 else
     echo "▸ 用 ad-hoc 簽名..."
     codesign -s - "$APP_BUNDLE" 2>/dev/null || true

@@ -55,6 +55,34 @@ jobs:
           chmod +x build-app.sh
           ./build-app.sh
 
+      - name: Notarize and staple DMG
+        if: ${{ env.SIGNING_IDENTITY != '' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "⚠️ 未設定公證 secrets（APPLE_ID / APPLE_APP_PASSWORD / APPLE_TEAM_ID），略過公證"
+            echo "   未公證的 App 下載後仍會被 Gatekeeper 封鎖。"
+            exit 0
+          fi
+
+          DMG=.build/app/MacTomatoAlarm.dmg
+
+          echo "▸ 送交 Apple 公證（會等待結果，通常數十秒到數分鐘）..."
+          xcrun notarytool submit "$DMG" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+
+          echo "▸ 將公證票據釘到 DMG 上..."
+          xcrun stapler staple "$DMG"
+
+          echo "▸ 驗證 Gatekeeper 結果..."
+          spctl --assess --type open --context context:primary-signature -v "$DMG" || true
+
       - name: Read version from Info.plist
         id: version
         run: |
