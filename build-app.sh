@@ -23,8 +23,11 @@ cp "$SRC/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$RESOURCES"/* "$APP_BUNDLE/Contents/Resources/"
 
 # 複製 SwiftPM 產生的資源 bundle，否則 Bundle.module 會在啟動時 fatalError，導致 App 一開啟就閃退
+# Swift 6.x 的 resource_bundle_accessor 從 Bundle.main.bundleURL (即 .app 根目錄) 找 bundle，
+# 因此需要複製到 .app 根目錄以及 Contents/Resources/ 兩處
 RES_BUNDLE="$BIN_PATH/${PRODUCT}_${PRODUCT}.bundle"
 if [ -d "$RES_BUNDLE" ]; then
+    cp -R "$RES_BUNDLE" "$APP_BUNDLE/"
     cp -R "$RES_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
 else
     echo "⚠️  找不到資源 bundle: $RES_BUNDLE" >&2
