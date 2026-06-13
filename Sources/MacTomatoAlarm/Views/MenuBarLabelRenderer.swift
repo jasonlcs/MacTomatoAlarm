@@ -27,9 +27,10 @@ enum MenuBarLabelRenderer {
         let textSize = attributed?.size() ?? .zero
 
         let symbolConfig = NSImage.SymbolConfiguration(pointSize: iconSize, weight: .bold)
-        let baseIcon = (NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
-            ?? NSImage(systemSymbolName: "timer", accessibilityDescription: nil)!)
-            .withSymbolConfiguration(symbolConfig) ?? NSImage()
+        let rawIcon = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
+            ?? NSImage(systemSymbolName: "timer", accessibilityDescription: nil)
+            ?? NSImage()
+        let baseIcon = rawIcon.withSymbolConfiguration(symbolConfig) ?? rawIcon
         let whiteIcon = tinted(baseIcon, with: .white)
         let iconWidth = whiteIcon.size.width
 
@@ -70,12 +71,12 @@ enum MenuBarLabelRenderer {
     }
 
     private static func tinted(_ image: NSImage, with color: NSColor) -> NSImage {
-        let result = NSImage(size: image.size)
-        result.lockFocus()
-        image.draw(in: NSRect(origin: .zero, size: image.size))
-        color.set()
-        NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
-        result.unlockFocus()
+        let result = NSImage(size: image.size, flipped: false) { _ in
+            image.draw(in: NSRect(origin: .zero, size: image.size))
+            color.set()
+            NSRect(origin: .zero, size: image.size).fill(using: .sourceAtop)
+            return true
+        }
         result.isTemplate = false
         return result
     }
