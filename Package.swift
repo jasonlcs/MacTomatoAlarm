@@ -7,8 +7,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MacTomatoAlarm",
-            path: "Sources/MacTomatoAlarm",
-            resources: [.process("Resources")]
+            path: "Sources/MacTomatoAlarm"
         )
     ]
 )

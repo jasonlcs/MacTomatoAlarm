@@ -40,6 +40,6 @@ struct MacTomatoAlarmApp: App {
     }
 
     private func menuBarImage(for name: String) -> NSImage {
-        Bundle.module.image(forResource: name) ?? NSImage(systemSymbolName: "timer", accessibilityDescription: nil)!
+        Bundle.main.image(forResource: name) ?? NSImage(systemSymbolName: "timer", accessibilityDescription: nil)!
     }
 }
