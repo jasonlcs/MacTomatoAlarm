@@ -89,6 +89,12 @@ hdiutil create -volname "$PRODUCT" -srcfolder "$STAGING" \
   -ov -format UDZO -imagekey zlib-level=9 \
   -scrub "$DMG_FINAL"
 
+# 以 Developer ID 簽章 DMG 外層容器，讓 Gatekeeper 能直接驗證（公證在 CI 後續步驟進行）
+if [ -n "$SIGNING_IDENTITY" ]; then
+    echo "▸ 簽章 DMG..."
+    codesign --force --timestamp --sign "$SIGNING_IDENTITY" "$DMG_FINAL"
+fi
+
 echo "▸ 清理暫存..."
 rm -f "$BUILD_DIR/dmg-bg-gen" "$BUILD_DIR/background.png"
 rm -rf "$STAGING"
