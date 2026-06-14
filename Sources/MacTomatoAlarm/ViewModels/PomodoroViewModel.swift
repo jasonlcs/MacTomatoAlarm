@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import AppKit
 
 extension Notification.Name {
     static let dismissPopover = Notification.Name("DismissPopover")
@@ -29,6 +30,10 @@ final class PomodoroViewModel {
     var pulseIntervalMinutes: Int = 1
 
     private var timerTask: Task<Void, Never>?
+    private var screensDidSleepObserver: NSObjectProtocol?
+    private var screensDidWakeObserver: NSObjectProtocol?
+    private var wasPausedByScreenSleep = false
+    private var pulseHoldUntil: Date?
 
     var onPulseTick: ((_ isPulsing: Bool, _ formatted: String, _ phase: TimerPhase) -> Void)?
 
@@ -44,6 +49,16 @@ final class PomodoroViewModel {
                     OverlayPanelManager.shared.hide()
                 }
             }
+        }
+        observeScreenSleep()
+    }
+
+    deinit {
+        if let screensDidSleepObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(screensDidSleepObserver)
+        }
+        if let screensDidWakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(screensDidWakeObserver)
         }
     }
 
@@ -156,12 +171,16 @@ final class PomodoroViewModel {
     func skip() {
         timerTask?.cancel()
         timerTask = nil
+        wasPausedByScreenSleep = false
+        pulseHoldUntil = nil
         moveToNextPhase()
     }
 
     func reset() {
         timerTask?.cancel()
         timerTask = nil
+        wasPausedByScreenSleep = false
+        pulseHoldUntil = nil
         status = .idle
         phase = .focus
         cycleCount = completedSessions / 4
@@ -223,6 +242,7 @@ final class PomodoroViewModel {
     }
 
     private func startTimer() {
+        timerTask?.cancel()
         status = .running
         timerTask = Task { await runTimerLoop() }
     }
@@ -231,9 +251,12 @@ final class PomodoroViewModel {
         status = .paused
         timerTask?.cancel()
         timerTask = nil
+        onPulseTick?(false, formattedRemaining, phase)
     }
 
     private func resumeTimer() {
+        guard status == .paused else { return }
+        timerTask?.cancel()
         status = .running
         timerTask = Task { await runTimerLoop() }
     }
@@ -243,16 +266,7 @@ final class PomodoroViewModel {
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled, status == .running else { return }
             timeRemaining -= 1
-            let totalSecs = Int(max(timeRemaining, 0))
-            let mins = totalSecs / 60
-            let secs = totalSecs % 60
-            let isPulse: Bool
-            if phase == .shortBreak || phase == .longBreak {
-                isPulse = true
-            } else {
-                isPulse = secs >= 1 && secs <= 3 && mins % pulseIntervalMinutes == 0
-            }
-            onPulseTick?(isPulse, formattedRemaining, phase)
+            onPulseTick?(shouldShowPulse(), formattedRemaining, phase)
         }
         guard !Task.isCancelled else { return }
         await handleTimerComplete()
@@ -289,5 +303,51 @@ final class PomodoroViewModel {
         }
         status = .idle
         timeRemaining = totalTime
+    }
+
+    private func observeScreenSleep() {
+        screensDidSleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.screensDidSleepNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, self.status == .running else { return }
+            self.wasPausedByScreenSleep = true
+            self.pauseTimer()
+        }
+
+        screensDidWakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, self.wasPausedByScreenSleep, self.status == .paused else { return }
+            self.wasPausedByScreenSleep = false
+            self.showPulseForThreeSeconds()
+            self.resumeTimer()
+        }
+    }
+
+    private func showPulseForThreeSeconds() {
+        pulseHoldUntil = Date().addingTimeInterval(3)
+        onPulseTick?(true, formattedRemaining, phase)
+    }
+
+    private func shouldShowPulse() -> Bool {
+        let isHeld = pulseHoldUntil.map { Date() < $0 } ?? false
+        if !isHeld {
+            pulseHoldUntil = nil
+        }
+
+        switch phase {
+        case .shortBreak, .longBreak:
+            return true
+        case .focus:
+            let totalSecs = Int(max(timeRemaining, 0))
+            let mins = totalSecs / 60
+            let secs = totalSecs % 60
+            let isScheduledPulse = secs >= 1 && secs <= 3 && mins % pulseIntervalMinutes == 0
+            return isHeld || isScheduledPulse
+        }
     }
 }
